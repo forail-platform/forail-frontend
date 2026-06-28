@@ -37,6 +37,10 @@ export function useAssistant() {
   const abortRef = useRef<AbortController | null>(null)
 
   const sendMessage = useCallback(async (text: string, pageContext?: string) => {
+    // Ignore a new send while one is already in flight: it would orphan the
+    // previous AbortController and let two readers race on the same slot.
+    if (abortRef.current) return
+
     // Add user message
     setMessages(prev => [...prev, { role: 'user', content: text }])
     setIsStreaming(true)
@@ -47,6 +51,7 @@ export function useAssistant() {
     const controller = new AbortController()
     abortRef.current = controller
 
+    let botContent = ''
     try {
       const history = messages.slice(-6).map(m => ({ role: m.role, content: m.content }))
 
@@ -67,7 +72,6 @@ export function useAssistant() {
 
       const reader = resp.body.getReader()
       const decoder = new TextDecoder()
-      let botContent = ''
 
       while (true) {
         const { done, value } = await reader.read()
@@ -102,11 +106,13 @@ export function useAssistant() {
       }
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
+        // Append the failure note rather than discarding everything already streamed.
+        const note = '*Unable to reach the assistant. Please try again later.*'
         setMessages(prev => {
           const updated = [...prev]
           updated[updated.length - 1] = {
             role: 'assistant',
-            content: '*Unable to reach the assistant. Please try again later.*',
+            content: botContent ? `${botContent}\n\n${note}` : note,
           }
           return updated
         })
