@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Loader2, Save, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,7 +25,12 @@ export function WorkflowNodeConfigPanel({ node, onClose }: WorkflowNodeConfigPan
   )
   const [surveyEnabled, setSurveyEnabled] = useState(node.survey_enabled ?? false)
 
+  // Re-seed the form only when a different node is selected, not on every
+  // background refetch of the same node (which would discard in-progress edits).
+  const lastNodeIdRef = useRef<number | null>(null)
   useEffect(() => {
+    if (lastNodeIdRef.current === node.id) return
+    lastNodeIdRef.current = node.id
     setConverge(node.all_parents_must_converge)
     setLimit(node.limit ?? '')
     setVerbosity(node.verbosity != null ? String(node.verbosity) : '')
