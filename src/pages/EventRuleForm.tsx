@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Plus, Trash2, Loader2 } from 'lucide-react'
 import { FormPageSkeleton } from '@/components/skeletons/FormPageSkeleton'
@@ -70,6 +71,13 @@ export function EventRuleForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    // Actions are required; a rule whose actions all have an unset target would
+    // be saved able-to-do-nothing. Require at least one real action.
+    const validActions = actions.filter(a => a.target_id > 0)
+    if (validActions.length === 0) {
+      toast.error('Add at least one action with a target.')
+      return
+    }
     const payload = {
       name,
       description,
@@ -79,7 +87,7 @@ export function EventRuleForm() {
       webhook_path: webhookPath,
       throttle_seconds: throttleSeconds,
       conditions,
-      actions: actions.filter(a => a.target_id > 0),
+      actions: validActions,
     }
 
     if (isEdit) {
