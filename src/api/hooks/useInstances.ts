@@ -41,6 +41,7 @@ export function useInstances(params: UseInstancesParams = {}) {
 export function useInstanceDetail(id: string) {
   return useQuery<Instance>({
     queryKey: ['instance', id],
+    enabled: !!id,
     queryFn: async () => {
       const { data } = await api.get<Instance>(`/instances/${id}/`)
       return data
@@ -131,6 +132,7 @@ export function useInstanceGroups(params: UseInstanceGroupsParams = {}) {
 export function useInstanceGroupDetail(id: string) {
   return useQuery<InstanceGroup>({
     queryKey: ['instance_group', id],
+    enabled: !!id,
     queryFn: async () => {
       const { data } = await api.get<InstanceGroup>(`/instance_groups/${id}/`)
       return data

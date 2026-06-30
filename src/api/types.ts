@@ -149,6 +149,7 @@ export interface JobTemplate {
   status: JobStatus
   last_job_run: string | null
   last_job_failed: boolean
+  job_type: string
   playbook: string
   forks: number
   limit: string

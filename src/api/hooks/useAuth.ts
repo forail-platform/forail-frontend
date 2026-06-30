@@ -11,10 +11,12 @@ export function useMe() {
     queryFn: async () => {
       const { data } = await api.get<MeResponse>('/me/')
       const user = data.results[0]
-      if (user) {
-        setUser(user)
-      }
-      return user!
+      // An empty result set means "not authenticated" — surface it as an error so
+      // App treats it like a 401 (redirect to login) instead of resolving the
+      // query successfully with an undefined user that consumers then deref.
+      if (!user) throw new Error('Not authenticated')
+      setUser(user)
+      return user
     },
     retry: false,
   })

@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ReactFlow,
@@ -110,8 +110,15 @@ export function TopologyView() {
 
   const layout = useMemo(() => buildGraph(instances), [instances])
 
-  const [nodes, , onNodesChange] = useNodesState(layout.nodes)
-  const [edges, , onEdgesChange] = useEdgesState(layout.edges)
+  const [nodes, setNodes, onNodesChange] = useNodesState(layout.nodes)
+  const [edges, setEdges, onEdgesChange] = useEdgesState(layout.edges)
+
+  // Push refreshed topology (capacity, state, last_seen, added/removed instances)
+  // into graph state — useNodesState/useEdgesState only seed on first render.
+  useEffect(() => {
+    setNodes(layout.nodes)
+    setEdges(layout.edges)
+  }, [layout, setNodes, setEdges])
 
   const handleNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
@@ -139,7 +146,6 @@ export function TopologyView() {
   return (
     <div style={{ height: 'calc(100vh - 200px)', minHeight: '500px' }}>
       <ReactFlow
-        key={instances.map((i) => i.id).join(',')}
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}

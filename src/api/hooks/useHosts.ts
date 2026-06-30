@@ -41,6 +41,7 @@ export function useHosts(params: UseHostsParams = {}) {
 export function useHostDetail(id: string) {
   return useQuery<Host>({
     queryKey: ['host', id],
+    enabled: !!id,
     queryFn: async () => {
       const { data } = await api.get<Host>(`/hosts/${id}/`)
       return data

@@ -103,7 +103,8 @@ export function useTogglePolicy() {
       const { data } = await api.post(`/policies/${id}/${action}/`)
       return data
     },
-    onSuccess: () => {
+    onSuccess: (_data, { enabled }) => {
+      toast.success(enabled ? 'Policy enabled' : 'Policy disabled')
       qc.invalidateQueries({ queryKey: ['policies'] })
     },
   })

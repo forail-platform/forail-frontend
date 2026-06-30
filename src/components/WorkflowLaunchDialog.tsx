@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Loader2, Rocket, ChevronRight, ChevronLeft } from 'lucide-react'
 import {
   Dialog,
@@ -12,9 +12,10 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { CodeEditor } from '@/components/CodeEditor'
 import { SurveyQuestionInput } from '@/components/SurveyQuestionInput'
-import type { WorkflowJobTemplate, WorkflowNodeSurveyInfo } from '@/api/types'
+import type { WorkflowJobTemplate, WorkflowNodeSurveyInfo, SurveyQuestion } from '@/api/types'
 import { api } from '@/api/client'
 import { useQuery } from '@tanstack/react-query'
+import { useWorkflowJobTemplateSurvey } from '@/api/hooks/useTemplates'
 
 interface WorkflowLaunchDialogProps {
   open: boolean
@@ -46,6 +47,7 @@ export function WorkflowLaunchDialog({
   onLaunch,
 }: WorkflowLaunchDialogProps) {
   const { data: launchData } = useWorkflowLaunchData(String(template.id))
+  const { data: wfSurvey } = useWorkflowJobTemplateSurvey(String(template.id))
 
   const [extraVars, setExtraVars] = useState(template.extra_vars || '---')
   const [step, setStep] = useState(0)
@@ -56,17 +58,36 @@ export function WorkflowLaunchDialog({
   // Node-level survey answers: { [identifier]: { [variable]: value } }
   const [nodeSurveyAnswers, setNodeSurveyAnswers] = useState<Record<string, Record<string, unknown>>>({})
 
+  const wasOpenRef = useRef(false)
+  const initRef = useRef(false)
+
   const nodeSurveys = launchData?.node_surveys ?? []
-  const hasWfSurvey = launchData?.survey_enabled
+  const wfSurveyQuestions = (wfSurvey?.spec ?? []) as SurveyQuestion[]
+  const hasWfSurvey = Boolean(launchData?.survey_enabled) && wfSurveyQuestions.length > 0
   const totalSteps = (hasWfSurvey ? 1 : 0) + nodeSurveys.length + 1 // +1 for the final extras step
 
   useEffect(() => {
-    if (open) {
+    if (!open) {
+      wasOpenRef.current = false
+      initRef.current = false
+      return
+    }
+    // Reset step/extra vars only on the open transition, not on background refetch.
+    if (!wasOpenRef.current) {
+      wasOpenRef.current = true
       setStep(0)
       setExtraVars(template.extra_vars || '---')
-      setWfSurveyAnswers({})
+    }
+    // Seed survey defaults once, when launch/survey data is first available.
+    if (!initRef.current && (launchData || wfSurvey)) {
+      initRef.current = true
 
-      // Initialize node survey answers with defaults
+      const wfDefaults: Record<string, unknown> = {}
+      for (const q of wfSurveyQuestions) {
+        if (q.default !== '' && q.default !== undefined) wfDefaults[q.variable] = q.default
+      }
+      setWfSurveyAnswers(wfDefaults)
+
       const nodeDefaults: Record<string, Record<string, unknown>> = {}
       for (const ns of nodeSurveys) {
         const answers: Record<string, unknown> = {}
@@ -77,18 +98,31 @@ export function WorkflowLaunchDialog({
       }
       setNodeSurveyAnswers(nodeDefaults)
     }
-  }, [open, launchData])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, launchData, wfSurvey])
 
   const handleLaunch = () => {
     const payload: Record<string, unknown> = {}
 
-    if (template.ask_variables_on_launch) {
-      payload.extra_vars = extraVars
-    }
-
-    // Merge workflow survey answers into extra_vars
+    // Merge workflow survey answers into extra_vars without losing user-entered vars.
+    const hasUserVars = template.ask_variables_on_launch && extraVars && extraVars !== '---'
     if (Object.keys(wfSurveyAnswers).length > 0) {
-      payload.extra_vars = { ...(typeof payload.extra_vars === 'object' ? payload.extra_vars as Record<string, unknown> : {}), ...wfSurveyAnswers }
+      if (hasUserVars) {
+        try {
+          const ev = JSON.parse(extraVars) as Record<string, unknown>
+          payload.extra_vars = JSON.stringify({ ...ev, ...wfSurveyAnswers })
+        } catch {
+          // extraVars is YAML — append survey answers as YAML lines (JSON ⊂ YAML).
+          const surveyYaml = Object.entries(wfSurveyAnswers)
+            .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+            .join('\n')
+          payload.extra_vars = `${extraVars}\n${surveyYaml}`
+        }
+      } else {
+        payload.extra_vars = JSON.stringify(wfSurveyAnswers)
+      }
+    } else if (hasUserVars) {
+      payload.extra_vars = extraVars
     }
 
     if (Object.keys(nodeSurveyAnswers).length > 0) {
@@ -111,12 +145,22 @@ export function WorkflowLaunchDialog({
               <h3 className="font-semibold">Workflow Survey</h3>
               <Badge variant="outline">Workflow Level</Badge>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Answer the workflow-level survey questions.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              (Survey questions loaded from workflow template)
-            </p>
+            {wfSurveyQuestions.map((q) => (
+              <div key={q.variable} className="space-y-2">
+                <Label>
+                  {q.question_name}
+                  {q.required && <span className="text-destructive ml-1">*</span>}
+                </Label>
+                {q.question_description && (
+                  <p className="text-xs text-muted-foreground">{q.question_description}</p>
+                )}
+                <SurveyQuestionInput
+                  question={q}
+                  value={wfSurveyAnswers[q.variable]}
+                  onChange={(val) => setWfSurveyAnswers(prev => ({ ...prev, [q.variable]: val }))}
+                />
+              </div>
+            ))}
           </div>
         )
       }

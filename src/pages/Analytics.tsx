@@ -93,7 +93,9 @@ export function Analytics() {
   const { data: busiestHosts } = useBusiestHosts(period)
   const { data: coverage } = useHostCoverage(period)
   const { data: failures } = useFailureAnalysis(period)
-  const { data: savings } = useTimeSavings(period, multiplier)
+  // Clamp to the field's min so an empty input (Number('') === 0) can't compute a
+  // meaningless 0x manual time.
+  const { data: savings } = useTimeSavings(period, Math.max(1, multiplier))
 
   const totalJobs = successRate?.reduce((sum, r) => sum + r.total, 0) ?? 0
   const totalSuccessful = successRate?.reduce((sum, r) => sum + r.successful, 0) ?? 0

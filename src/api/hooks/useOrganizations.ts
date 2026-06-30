@@ -86,6 +86,7 @@ export function useDeleteOrganization(id: string) {
 export function useOrganizationDetail(id: string) {
   return useQuery<Organization>({
     queryKey: ['organization', id],
+    enabled: !!id,
     queryFn: async () => {
       const { data } = await api.get<Organization>(`/organizations/${id}/`)
       return data

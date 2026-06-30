@@ -67,7 +67,7 @@ export function JobTemplateForm() {
     if (isEdit && template) {
       setName(template.name)
       setDescription(template.description)
-      setJobType(template.summary_fields?.project ? 'run' : 'run')
+      setJobType(template.job_type === 'check' ? 'check' : 'run')
       setInventory(template.summary_fields?.inventory?.id?.toString() ?? '')
       setProject(template.summary_fields?.project?.id?.toString() ?? '')
       setPlaybook(template.playbook)

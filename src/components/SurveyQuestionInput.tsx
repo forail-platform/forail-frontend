@@ -12,7 +12,7 @@ interface SurveyQuestionInputProps {
 export function SurveyQuestionInput({ question, value, onChange }: SurveyQuestionInputProps) {
   const qType = question.type
 
-  if (qType === 'multiplechoice' || qType === 'multiselect') {
+  if (qType === 'multiplechoice') {
     const raw = question.choices
     const choices = Array.isArray(raw) ? raw : (raw || '').split('\n').filter(Boolean)
     const options = choices.map((c) => ({ value: c, label: c }))
@@ -22,6 +22,33 @@ export function SurveyQuestionInput({ question, value, onChange }: SurveyQuestio
         onChange={(e) => onChange(e.target.value)}
         options={[{ value: '', label: '-- Select --' }, ...options]}
       />
+    )
+  }
+
+  if (qType === 'multiselect') {
+    const raw = question.choices
+    const choices = Array.isArray(raw) ? raw : (raw || '').split('\n').filter(Boolean)
+    // A multiselect answer is an array of the chosen values, not a single string.
+    const selected = Array.isArray(value) ? (value as string[]) : []
+    const toggle = (choice: string) =>
+      onChange(
+        selected.includes(choice)
+          ? selected.filter((c) => c !== choice)
+          : [...selected, choice],
+      )
+    return (
+      <div className="space-y-1">
+        {choices.map((choice) => (
+          <label key={choice} className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={selected.includes(choice)}
+              onChange={() => toggle(choice)}
+            />
+            {choice}
+          </label>
+        ))}
+      </div>
     )
   }
 
@@ -40,9 +67,12 @@ export function SurveyQuestionInput({ question, value, onChange }: SurveyQuestio
       <Input
         type="number"
         value={String(value ?? '')}
-        onChange={(e) =>
-          onChange(qType === 'integer' ? parseInt(e.target.value) : parseFloat(e.target.value))
-        }
+        onChange={(e) => {
+          // Empty / unparseable input must clear the answer, not store NaN.
+          if (e.target.value === '') return onChange('')
+          const n = qType === 'integer' ? parseInt(e.target.value, 10) : parseFloat(e.target.value)
+          onChange(Number.isNaN(n) ? '' : n)
+        }}
         min={question.min ?? undefined}
         max={question.max ?? undefined}
       />

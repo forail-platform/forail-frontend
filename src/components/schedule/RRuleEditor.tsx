@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { RRule, Weekday } from 'rrule'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -52,9 +52,19 @@ export function RRuleEditor({ value, onChange }: RRuleEditorProps) {
   const [until, setUntil] = useState('')
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone)
 
-  // Parse initial rrule value on mount
+  // Tracks the rrule string we last emitted (so we don't re-parse our own output)
+  // and whether the next build should be suppressed (it reflects a parse, not a
+  // user edit). skipBuildRef starts true to skip the initial mount build — on an
+  // edit form `value` arrives a render *after* mount, so emitting on mount would
+  // clobber the schedule the parent is about to load.
+  const lastEmittedRef = useRef<string | null>(null)
+  const skipBuildRef = useRef(true)
+
+  // Parse the incoming rrule whenever it changes externally (edit-form load or a
+  // parent reset), ignoring the value we ourselves emitted.
   useEffect(() => {
     if (!value || !value.includes('RRULE')) return
+    if (value === lastEmittedRef.current) return
     try {
       const lines = value.split('\n').filter((l) => l.trim())
       const dtstartLine = lines.find((l) => l.startsWith('DTSTART'))
@@ -91,8 +101,11 @@ export function RRuleEditor({ value, onChange }: RRuleEditorProps) {
     } catch {
       // invalid rrule, keep defaults
     }
+    // The state updates above will re-run the build effect; suppress that one
+    // emit so we echo the parsed schedule rather than overwriting it.
+    skipBuildRef.current = true
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [value])
 
   const buildRRule = useCallback(() => {
     const pad = (n: number) => String(n).padStart(2, '0')
@@ -119,8 +132,15 @@ export function RRuleEditor({ value, onChange }: RRuleEditorProps) {
   }, [freq, interval, byWeekday, dtstart, endType, count, until, timezone])
 
   useEffect(() => {
+    // Skip the build that immediately follows mount or a parse — only user-driven
+    // state changes should emit a new rrule.
+    if (skipBuildRef.current) {
+      skipBuildRef.current = false
+      return
+    }
     const newRrule = buildRRule()
     if (newRrule !== value) {
+      lastEmittedRef.current = newRrule
       onChange(newRrule)
     }
   }, [buildRRule, onChange, value])

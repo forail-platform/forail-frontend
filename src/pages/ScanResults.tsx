@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import { ShieldAlert, Loader2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -102,9 +102,8 @@ export function ScanResults() {
               </thead>
               <tbody>
                 {data.results.map((r) => (
-                  <>
+                  <Fragment key={r.id}>
                     <tr
-                      key={r.id}
                       className="cursor-pointer border-b last:border-0 hover:bg-muted/40"
                       onClick={() => setExpanded(expanded === r.id ? null : r.id)}
                     >
@@ -163,7 +162,7 @@ export function ScanResults() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>

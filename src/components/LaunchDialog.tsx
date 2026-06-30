@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Loader2, Rocket, RefreshCw } from 'lucide-react'
 import {
   Dialog,
@@ -65,8 +65,20 @@ export function LaunchDialog({
 
   const hasSurvey = template.survey_enabled && surveyData?.spec?.length
 
+  const wasOpenRef = useRef(false)
+  const surveyInitRef = useRef(false)
+
   useEffect(() => {
-    if (open) {
+    if (!open) {
+      wasOpenRef.current = false
+      surveyInitRef.current = false
+      return
+    }
+
+    // Reset scalar fields only on the open transition, not on every background
+    // refetch of template/surveyData (which would wipe what the user has typed).
+    if (!wasOpenRef.current) {
+      wasOpenRef.current = true
       setLimit(template.limit ?? '')
       setJobTags(template.job_tags ?? '')
       setSkipTags(template.skip_tags ?? '')
@@ -74,40 +86,41 @@ export function LaunchDialog({
       setExtraVars(template.extra_vars || '---')
       setForks(String(template.forks ?? 0))
       setJobSliceCount(String(template.job_slice_count ?? 1))
+    }
 
-      // Reset survey answers with defaults
-      if (surveyData?.spec) {
-        const defaults: Record<string, unknown> = {}
-        for (const q of surveyData.spec) {
-          if (q.default !== '' && q.default !== undefined) {
-            if (q.type === 'integer') defaults[q.variable] = Number(q.default)
-            else if (q.type === 'float') defaults[q.variable] = Number(q.default)
-            else if (q.type === 'multiselect' && typeof q.default === 'string') {
-              defaults[q.variable] = q.default.split('\n').filter(Boolean)
-            } else {
-              defaults[q.variable] = q.default
-            }
+    // Seed survey answers once per open, when the spec first becomes available.
+    if (surveyData?.spec && !surveyInitRef.current) {
+      surveyInitRef.current = true
+      const defaults: Record<string, unknown> = {}
+      for (const q of surveyData.spec) {
+        if (q.default !== '' && q.default !== undefined) {
+          if (q.type === 'integer') defaults[q.variable] = Number(q.default)
+          else if (q.type === 'float') defaults[q.variable] = Number(q.default)
+          else if (q.type === 'multiselect' && typeof q.default === 'string') {
+            defaults[q.variable] = q.default.split('\n').filter(Boolean)
+          } else {
+            defaults[q.variable] = q.default
           }
         }
-        setSurveyAnswers(defaults)
+      }
+      setSurveyAnswers(defaults)
 
-        // Resolve dynamic choices
-        const dynamicVars = surveyData.spec
-          .filter(q => q.dynamic_choices?.enabled)
-          .map(q => q.variable)
-        if (dynamicVars.length > 0) {
-          resolveDynamic.mutate(dynamicVars, {
-            onSuccess: (data) => {
-              const resolved: Record<string, string[]> = {}
-              for (const [variable, info] of Object.entries(data)) {
-                resolved[variable] = info.choices
-              }
-              setDynamicChoices(resolved)
-            },
-          })
-        } else {
-          setDynamicChoices({})
-        }
+      // Resolve dynamic choices
+      const dynamicVars = surveyData.spec
+        .filter(q => q.dynamic_choices?.enabled)
+        .map(q => q.variable)
+      if (dynamicVars.length > 0) {
+        resolveDynamic.mutate(dynamicVars, {
+          onSuccess: (data) => {
+            const resolved: Record<string, string[]> = {}
+            for (const [variable, info] of Object.entries(data)) {
+              resolved[variable] = info.choices
+            }
+            setDynamicChoices(resolved)
+          },
+        })
+      } else {
+        setDynamicChoices({})
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -133,19 +146,25 @@ export function LaunchDialog({
     if (template.ask_forks_on_launch) payload.forks = Number(forks)
     if (template.ask_job_slice_count_on_launch) payload.job_slice_count = Number(jobSliceCount)
 
-    // Merge survey answers into extra_vars
+    // Merge survey answers into extra_vars without losing user-entered vars.
+    const hasUserVars = template.ask_variables_on_launch && extraVars && extraVars !== '---'
     if (hasSurvey && Object.keys(surveyAnswers).length > 0) {
-      let ev: Record<string, unknown> = {}
-      if (template.ask_variables_on_launch && extraVars && extraVars !== '---') {
+      if (hasUserVars) {
         try {
-          ev = JSON.parse(extraVars)
+          const ev = JSON.parse(extraVars) as Record<string, unknown>
+          payload.extra_vars = JSON.stringify({ ...ev, ...surveyAnswers })
         } catch {
-          // If YAML, backend will handle
-          payload.extra_vars = extraVars
+          // extraVars is YAML — JSON is a valid YAML subset, so append the survey
+          // answers as YAML lines instead of discarding the user's vars.
+          const surveyYaml = Object.entries(surveyAnswers)
+            .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+            .join('\n')
+          payload.extra_vars = `${extraVars}\n${surveyYaml}`
         }
+      } else {
+        payload.extra_vars = JSON.stringify(surveyAnswers)
       }
-      payload.extra_vars = JSON.stringify({ ...ev, ...surveyAnswers })
-    } else if (template.ask_variables_on_launch && extraVars && extraVars !== '---') {
+    } else if (hasUserVars) {
       payload.extra_vars = extraVars
     }
 

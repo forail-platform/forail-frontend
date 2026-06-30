@@ -70,6 +70,7 @@ export function useWorkflowJobTemplates(params: UseTemplatesParams = {}) {
 export function useJobTemplateDetail(id: string) {
   return useQuery<JobTemplate>({
     queryKey: ['job_template', id],
+    enabled: !!id,
     queryFn: async () => {
       const { data } = await api.get<JobTemplate>(`/job_templates/${id}/`)
       return data
@@ -80,6 +81,7 @@ export function useJobTemplateDetail(id: string) {
 export function useWorkflowJobTemplateDetail(id: string) {
   return useQuery<WorkflowJobTemplate>({
     queryKey: ['workflow_job_template', id],
+    enabled: !!id,
     queryFn: async () => {
       const { data } = await api.get<WorkflowJobTemplate>(
         `/workflow_job_templates/${id}/`,
@@ -101,6 +103,9 @@ export function useLaunchJobTemplate(id: string) {
       toast.success('Job launched successfully')
       queryClient.invalidateQueries({ queryKey: ['jobs'] })
       queryClient.invalidateQueries({ queryKey: ['job_template', id] })
+      // The dashboard's recent-jobs widget must reflect the new run.
+      queryClient.invalidateQueries({ queryKey: ['recent-jobs'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
     },
   })
 }
@@ -171,6 +176,17 @@ export function useJobTemplateSurvey(id: string) {
     queryKey: ['job_template_survey', id],
     queryFn: async () => {
       const { data } = await api.get<SurveySpec>(`/job_templates/${id}/survey_spec/`)
+      return data
+    },
+    enabled: !!id,
+  })
+}
+
+export function useWorkflowJobTemplateSurvey(id: string) {
+  return useQuery<SurveySpec>({
+    queryKey: ['workflow_job_template_survey', id],
+    queryFn: async () => {
+      const { data } = await api.get<SurveySpec>(`/workflow_job_templates/${id}/survey_spec/`)
       return data
     },
     enabled: !!id,
@@ -288,6 +304,8 @@ export function useLaunchWorkflowJobTemplate(id: string) {
       toast.success('Workflow launched successfully')
       queryClient.invalidateQueries({ queryKey: ['jobs'] })
       queryClient.invalidateQueries({ queryKey: ['workflow_job_template', id] })
+      queryClient.invalidateQueries({ queryKey: ['recent-jobs'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
     },
   })
 }

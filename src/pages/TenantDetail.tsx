@@ -71,7 +71,7 @@ export function TenantDetail() {
   const navigate = useNavigate()
   const [showDelete, setShowDelete] = useState(false)
 
-  const { data: tenant, isLoading } = useTenant(id)
+  const { data: tenant, isLoading, isError } = useTenant(id)
   const deleteMutation = useDeleteTenant()
   const recalcMutation = useRecalculateTenant(id ?? '')
   const { data: events } = useTenantQuotaEvents({
@@ -83,10 +83,18 @@ export function TenantDetail() {
     page_size: 10,
   })
 
-  if (isLoading || !tenant) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (isError || !tenant) {
+    return (
+      <div className="py-12 text-center text-muted-foreground">
+        Tenant not found.
       </div>
     )
   }

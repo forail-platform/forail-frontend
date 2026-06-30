@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState } from 'react'
+import { useMemo, useCallback, useState, useEffect } from 'react'
 import {
   ReactFlow,
   Controls,
@@ -135,14 +135,17 @@ export function WorkflowVisualizer({ workflowId, workflowNodes, onNodeClick }: W
 
   const layout = useMemo(() => layoutNodes(workflowNodes), [workflowNodes])
 
-  const [nodes, , onNodesChange] = useNodesState(layout.nodes)
-  const [edges, , onEdgesChange] = useEdgesState(layout.edges)
+  const [nodes, setNodes, onNodesChange] = useNodesState(layout.nodes)
+  const [edges, setEdges, onEdgesChange] = useEdgesState(layout.edges)
 
-  // Sync layout when workflowNodes change
-  useMemo(() => {
-    // This triggers re-render with new layout via the key approach
-    return layout
-  }, [layout])
+  // useNodesState/useEdgesState only seed from their argument on first render, so
+  // push the recomputed layout into state whenever the workflow data changes —
+  // otherwise edge rewiring and node edits never appear (the id-set `key` below
+  // only remounts on add/remove).
+  useEffect(() => {
+    setNodes(layout.nodes)
+    setEdges(layout.edges)
+  }, [layout, setNodes, setEdges])
 
   const handleNodeClick: NodeMouseHandler = useCallback(
     (_event, node) => {
@@ -159,7 +162,6 @@ export function WorkflowVisualizer({ workflowId, workflowNodes, onNodeClick }: W
   return (
     <div className="relative" style={{ height: '600px' }}>
       <ReactFlow
-        key={workflowNodes.map((n) => n.id).join(',')}
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}

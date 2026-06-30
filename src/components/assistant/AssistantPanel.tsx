@@ -5,7 +5,12 @@ import { Button } from '@/components/ui/button'
 import { useAssistant, useAssistantHealth } from '@/api/hooks/useAssistant'
 
 function MarkdownContent({ content }: { content: string }) {
+  // Escape HTML first so model output (which may echo user/job data) can never
+  // inject live markup — the regex transform below only ever adds tags we control.
   const html = content
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
     .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre class="my-2 rounded bg-slate-100 dark:bg-slate-800 p-2 text-xs overflow-auto"><code>$2</code></pre>')
     .replace(/`([^`]+)`/g, '<code class="rounded bg-slate-100 dark:bg-slate-800 px-1 py-0.5 text-xs">$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')

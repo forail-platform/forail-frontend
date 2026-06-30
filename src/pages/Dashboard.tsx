@@ -101,7 +101,7 @@ export function Dashboard() {
     info: dashRecs.filter((r) => r.severity === 'info'),
   }
 
-  if (dashLoading && jobsLoading && graphLoading) {
+  if (dashLoading || jobsLoading || graphLoading) {
     return <DashboardSkeleton />
   }
 
