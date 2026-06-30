@@ -102,7 +102,8 @@ export function useToggleScanner() {
       const { data } = await api.post(`/scanners/${id}/${action}/`)
       return data
     },
-    onSuccess: () => {
+    onSuccess: (_data, { enabled }) => {
+      toast.success(enabled ? 'Scanner enabled' : 'Scanner disabled')
       qc.invalidateQueries({ queryKey: ['scanners'] })
     },
   })
