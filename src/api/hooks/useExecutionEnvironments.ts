@@ -40,6 +40,7 @@ export function useExecutionEnvironments(params: UseExecutionEnvironmentsParams 
 export function useExecutionEnvironmentDetail(id: string) {
   return useQuery<ExecutionEnvironment>({
     queryKey: ['execution_environment', id],
+    enabled: !!id,
     queryFn: async () => {
       const { data } = await api.get<ExecutionEnvironment>(
         `/execution_environments/${id}/`,

@@ -55,6 +55,7 @@ export function useResourceSchedules(resourceType: string, resourceId: string) {
 export function useScheduleDetail(id: string) {
   return useQuery<Schedule>({
     queryKey: ['schedule', id],
+    enabled: !!id,
     queryFn: async () => {
       const { data } = await api.get<Schedule>(`/schedules/${id}/`)
       return data

@@ -44,6 +44,7 @@ export function useCredentials(params: UseCredentialsParams = {}) {
 export function useCredentialDetail(id: string) {
   return useQuery<Credential>({
     queryKey: ['credential', id],
+    enabled: !!id,
     queryFn: async () => {
       const { data } = await api.get<Credential>(`/credentials/${id}/`)
       return data

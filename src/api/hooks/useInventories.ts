@@ -41,6 +41,7 @@ export function useInventories(params: UseInventoriesParams = {}) {
 export function useInventoryDetail(id: string) {
   return useQuery<Inventory>({
     queryKey: ['inventory', id],
+    enabled: !!id,
     queryFn: async () => {
       const { data } = await api.get<Inventory>(`/inventories/${id}/`)
       return data

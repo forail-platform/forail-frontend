@@ -41,6 +41,7 @@ export function useProjects(params: UseProjectsParams = {}) {
 export function useProjectDetail(id: string) {
   return useQuery<Project>({
     queryKey: ['project', id],
+    enabled: !!id,
     queryFn: async () => {
       const { data } = await api.get<Project>(`/projects/${id}/`)
       return data
