@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Loader2, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -43,10 +44,15 @@ export function CredentialForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     let inputs: Record<string, unknown> = {}
-    try {
-      inputs = JSON.parse(inputsJson)
-    } catch {
-      // keep empty
+    if (inputsJson.trim()) {
+      try {
+        inputs = JSON.parse(inputsJson)
+      } catch {
+        // Abort rather than silently submitting {} — that would wipe the
+        // credential's stored secrets.
+        toast.error('Credential inputs must be valid JSON.')
+        return
+      }
     }
 
     const payload: Record<string, unknown> = {
