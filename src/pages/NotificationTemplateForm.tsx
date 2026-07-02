@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Loader2, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -154,11 +155,23 @@ export function NotificationTemplateForm() {
       const val = config[field.key] ?? ''
       if (field.type === 'textarea' && (field.key === 'recipients' || field.key === 'channels' || field.key === 'to_numbers' || field.key === 'targets' || field.key === 'annotation_tags')) {
         notification_configuration[field.key] = val.split('\n').map((s) => s.trim()).filter(Boolean)
+      } else if (field.key === 'headers') {
+        // Webhook headers is an object field — the API rejects a raw string
+        // ("expected object"), so parse the JSON (empty means no headers, {}).
+        try {
+          notification_configuration[field.key] = val.trim() ? JSON.parse(val) : {}
+        } catch {
+          toast.error('Headers must be a valid JSON object.')
+          return
+        }
       } else if (field.type === 'number') {
         notification_configuration[field.key] = val ? Number(val) : 0
       } else if (val === 'true' || val === 'false') {
         notification_configuration[field.key] = val === 'true'
-      } else if (val || !isEdit) {
+      } else if (val) {
+        // Only send filled optional fields — forcing empty strings onto typed
+        // fields (e.g. the boolean disable_ssl_verification) makes the API
+        // reject them ("expected bool"); omitting them lets the default apply.
         notification_configuration[field.key] = val
       }
     }
