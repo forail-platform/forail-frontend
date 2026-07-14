@@ -8,6 +8,11 @@ and the project adheres to SemVer until the first stable release.
 
 ## [Unreleased]
 
+### Security
+- **Branding favicon URL validation**: the favicon supplied by the
+  unauthenticated host-keyed branding response is only applied when it is an
+  `http(s)` or same-origin relative URL, blocking `javascript:`/`data:` schemes.
+
 ## [2026.06.0] - 2026-06-14
 
 ### Changed
