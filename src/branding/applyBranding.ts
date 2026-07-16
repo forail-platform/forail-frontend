@@ -16,6 +16,21 @@ interface BrandingShape {
 const CACHE_KEY = 'forail.branding'
 const TTL_MS = 5 * 60 * 1000
 
+// L14: the branding response is served from an unauthenticated, host-keyed
+// endpoint. Only apply a favicon URL that is a plain http(s) absolute URL or a
+// same-origin relative path — never a javascript:/data:/other scheme.
+function isSafeIconUrl(url: string): boolean {
+  if (!url) return false
+  // Relative path (same origin) is fine.
+  if (url.startsWith('/') && !url.startsWith('//')) return true
+  try {
+    const parsed = new URL(url, window.location.origin)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 function apply(b: BrandingShape): void {
   if (!b) return
   if (b.primary_color) {
@@ -27,7 +42,7 @@ function apply(b: BrandingShape): void {
   if (b.name) {
     document.title = `${b.name} — Forail`
   }
-  if (b.logo_url) {
+  if (b.logo_url && isSafeIconUrl(b.logo_url)) {
     const link = document.querySelector("link[rel*='icon']") as HTMLLinkElement | null
     if (link) link.href = b.logo_url
   }
