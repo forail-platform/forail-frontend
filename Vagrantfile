@@ -1,6 +1,11 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+# VirtualBox is the only supported provider. libvirt/KVM is deliberately not
+# used here -- it cannot share AMD-V with VirtualBox on the same host, and the
+# other Forail environments are VirtualBox.
+ENV["VAGRANT_DEFAULT_PROVIDER"] ||= "virtualbox"
+
 Vagrant.configure("2") do |config|
   config.vm.box = "bento/ubuntu-24.04"
   config.vm.hostname = "forail-frontend"
@@ -15,11 +20,6 @@ Vagrant.configure("2") do |config|
     vb.name = "forail-frontend"
     vb.memory = "4096"
     vb.cpus = 2
-  end
-
-  config.vm.provider "libvirt" do |lv|
-    lv.memory = 4096
-    lv.cpus = 2
   end
 
   config.vm.synced_folder ".", "/forail-frontend", type: "rsync",
