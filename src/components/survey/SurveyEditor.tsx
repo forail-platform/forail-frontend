@@ -83,11 +83,19 @@ const DB_FIELD_OPTIONS = [
   { value: 'description', label: 'Description' },
 ]
 
-const SOURCE_TYPE_OPTIONS = [
+// Jinja2 is not offered. The server renders that template in the web process,
+// so it is refused unless an operator explicitly turns it back on in a settings
+// file. Saving a survey with it fails validation, so putting it in this list
+// would only produce a form that cannot be submitted.
+export const SOURCE_TYPE_OPTIONS = [
   { value: 'db_query', label: 'Database Query' },
   { value: 'api_endpoint', label: 'External API' },
-  { value: 'jinja2', label: 'Jinja2 Template' },
 ]
+
+// A survey saved before the source type was withdrawn still carries it. Keep it
+// selectable in that one case so the question is visible and can be migrated,
+// rather than silently reading as a Database Query it never was.
+export const LEGACY_JINJA2_OPTION = { value: 'jinja2', label: 'Jinja2 Template (withdrawn)' }
 
 const emptyDynamicChoices: DynamicChoicesConfig = {
   enabled: false,
@@ -280,7 +288,11 @@ export function SurveyEditor({ value, onChange }: SurveyEditorProps) {
                           ...draft,
                           dynamic_choices: { ...draft.dynamic_choices!, source_type: e.target.value as DynamicChoicesConfig['source_type'] },
                         })}
-                        options={SOURCE_TYPE_OPTIONS}
+                        options={
+                          draft.dynamic_choices.source_type === 'jinja2'
+                            ? [...SOURCE_TYPE_OPTIONS, LEGACY_JINJA2_OPTION]
+                            : SOURCE_TYPE_OPTIONS
+                        }
                       />
                     </div>
 
@@ -367,6 +379,11 @@ export function SurveyEditor({ value, onChange }: SurveyEditorProps) {
                           placeholder={'{{ hosts | tojson }}'}
                           className="font-mono text-sm"
                         />
+                        <p className="text-xs text-destructive">
+                          This source type has been withdrawn: the template is rendered on the server,
+                          which made it a code-execution path. It resolves to no choices, and the survey
+                          cannot be saved while it is selected. Switch to Database Query or External API.
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           Available variables: hosts, groups (from template inventory). Must output a JSON array.
                         </p>
