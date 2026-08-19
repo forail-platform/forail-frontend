@@ -1,104 +1,121 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { Loader2 } from 'lucide-react'
 import { useMe } from '@/api/hooks/useAuth'
 import { useThemeStore } from '@/stores/theme'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { AssistantPanel } from '@/components/assistant/AssistantPanel'
 import { Login } from '@/pages/Login'
-import { Dashboard } from '@/pages/Dashboard'
-import { Jobs } from '@/pages/Jobs'
-import { JobDetail } from '@/pages/JobDetail'
-import { Templates } from '@/pages/Templates'
-import { TemplateDetail } from '@/pages/TemplateDetail'
-import { Projects } from '@/pages/Projects'
-import { ProjectDetail } from '@/pages/ProjectDetail'
-import { Inventories } from '@/pages/Inventories'
-import { InventoryDetail } from '@/pages/InventoryDetail'
-import { Credentials } from '@/pages/Credentials'
-import { CredentialDetail } from '@/pages/CredentialDetail'
-import { Organizations } from '@/pages/Organizations'
-import { OrganizationDetail } from '@/pages/OrganizationDetail'
-import { Users } from '@/pages/Users'
-import { UserDetail } from '@/pages/UserDetail'
-import { Teams } from '@/pages/Teams'
-import { TeamDetail } from '@/pages/TeamDetail'
-import { Hosts } from '@/pages/Hosts'
-import { HostDetail } from '@/pages/HostDetail'
-import { Schedules } from '@/pages/Schedules'
-import { ScheduleDetail } from '@/pages/ScheduleDetail'
-import { ActivityStream } from '@/pages/ActivityStream'
-import { AuditLog } from '@/pages/AuditLog'
-import { JobTemplateForm } from '@/pages/JobTemplateForm'
-import { ProjectForm } from '@/pages/ProjectForm'
-import { InventoryForm } from '@/pages/InventoryForm'
-import { CredentialForm } from '@/pages/CredentialForm'
-import { OrganizationForm } from '@/pages/OrganizationForm'
-import { Instances } from '@/pages/Instances'
-import { InstanceDetail } from '@/pages/InstanceDetail'
-import { InstanceGroups } from '@/pages/InstanceGroups'
-import { InstanceGroupDetail } from '@/pages/InstanceGroupDetail'
-import { ExecutionEnvironments } from '@/pages/ExecutionEnvironments'
-import { ExecutionEnvironmentDetail } from '@/pages/ExecutionEnvironmentDetail'
-import { Settings } from '@/pages/Settings'
-import { SettingsCategory } from '@/pages/SettingsCategory'
-import { UserForm } from '@/pages/UserForm'
-import { TeamForm } from '@/pages/TeamForm'
-import { WorkflowJobTemplateForm } from '@/pages/WorkflowJobTemplateForm'
-import { NotificationTemplates } from '@/pages/NotificationTemplates'
-import { NotificationTemplateDetail } from '@/pages/NotificationTemplateDetail'
-import { NotificationTemplateForm } from '@/pages/NotificationTemplateForm'
-import { NotFound } from '@/pages/NotFound'
-import { ScheduleForm } from '@/pages/ScheduleForm'
-import { WorkflowTemplateDetail } from '@/pages/WorkflowTemplateDetail'
-import { TopologyPage } from '@/pages/TopologyPage'
 import { ForcePasswordChange } from '@/pages/ForcePasswordChange'
-import { EventRules } from '@/pages/EventRules'
-import { EventRuleDetail } from '@/pages/EventRuleDetail'
-import { EventRuleForm } from '@/pages/EventRuleForm'
-import { EventLogs } from '@/pages/EventLogs'
-import { EventLogDetail } from '@/pages/EventLogDetail'
-import { OutboundWebhooks } from '@/pages/OutboundWebhooks'
-import { OutboundWebhookDetail } from '@/pages/OutboundWebhookDetail'
-import { OutboundWebhookForm } from '@/pages/OutboundWebhookForm'
-import { DriftDetections } from '@/pages/DriftDetections'
-import { DriftDetectionDetail } from '@/pages/DriftDetectionDetail'
-import { DriftAlertRules } from '@/pages/DriftAlertRules'
-import { DriftAlertRuleDetail } from '@/pages/DriftAlertRuleDetail'
-import { DriftAlertRuleForm } from '@/pages/DriftAlertRuleForm'
-import { DriftAlerts } from '@/pages/DriftAlerts'
-import { DriftAlertDetail } from '@/pages/DriftAlertDetail'
-import { FactSnapshots } from '@/pages/FactSnapshots'
-import { Analytics } from '@/pages/Analytics'
-import { ServicePortal } from '@/pages/ServicePortal'
-import { MyServiceRequests } from '@/pages/MyServiceRequests'
-import { ServiceRequestDetail } from '@/pages/ServiceRequestDetail'
-import { ServiceApprovals } from '@/pages/ServiceApprovals'
-import { ServiceCatalogAdmin } from '@/pages/ServiceCatalogAdmin'
-import { ServiceCatalogItemForm } from '@/pages/ServiceCatalogItemForm'
-import { UserSecurity } from '@/pages/UserSecurity'
-import { MfaChallenge } from '@/pages/MfaChallenge'
-import { Policies } from '@/pages/Policies'
-import { PolicyForm } from '@/pages/PolicyForm'
-import { PolicyDecisions } from '@/pages/PolicyDecisions'
-import { Scanners } from '@/pages/Scanners'
-import { ScannerForm } from '@/pages/ScannerForm'
-import { ScanResults } from '@/pages/ScanResults'
-import { Observability } from '@/pages/Observability'
-import { Tenants } from '@/pages/Tenants'
-import { TenantForm } from '@/pages/TenantForm'
-import { TenantDetail } from '@/pages/TenantDetail'
-import { TenantQuotaEvents } from '@/pages/TenantQuotaEvents'
-import { GettingStartedWizard } from '@/pages/wizards/GettingStartedWizard'
-import { AutomationWizard } from '@/pages/wizards/AutomationWizard'
-import { SelfServiceWizard } from '@/pages/wizards/SelfServiceWizard'
-import { TenancyWizard } from '@/pages/wizards/TenancyWizard'
-import { ComplianceWizard } from '@/pages/wizards/ComplianceWizard'
-import { ResourcesWizard } from '@/pages/wizards/ResourcesWizard'
-import { AccessWizard } from '@/pages/wizards/AccessWizard'
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
+
+// Every page below is loaded on demand. Imported eagerly they all landed in
+// one entry chunk, ~1.44 MB before gzip, which every visitor parsed before
+// the first screen appeared -- while a session typically touches a handful of
+// them. Login and ForcePasswordChange stay eager: they are the first paint
+// for an unauthenticated or first-login user, so deferring them would only
+// add a spinner ahead of the thing being waited for.
+const Dashboard = lazy(() => import('@/pages/Dashboard').then((m) => ({ default: m.Dashboard })))
+const Jobs = lazy(() => import('@/pages/Jobs').then((m) => ({ default: m.Jobs })))
+const JobDetail = lazy(() => import('@/pages/JobDetail').then((m) => ({ default: m.JobDetail })))
+const Templates = lazy(() => import('@/pages/Templates').then((m) => ({ default: m.Templates })))
+const TemplateDetail = lazy(() => import('@/pages/TemplateDetail').then((m) => ({ default: m.TemplateDetail })))
+const Projects = lazy(() => import('@/pages/Projects').then((m) => ({ default: m.Projects })))
+const ProjectDetail = lazy(() => import('@/pages/ProjectDetail').then((m) => ({ default: m.ProjectDetail })))
+const Inventories = lazy(() => import('@/pages/Inventories').then((m) => ({ default: m.Inventories })))
+const InventoryDetail = lazy(() => import('@/pages/InventoryDetail').then((m) => ({ default: m.InventoryDetail })))
+const Credentials = lazy(() => import('@/pages/Credentials').then((m) => ({ default: m.Credentials })))
+const CredentialDetail = lazy(() => import('@/pages/CredentialDetail').then((m) => ({ default: m.CredentialDetail })))
+const Organizations = lazy(() => import('@/pages/Organizations').then((m) => ({ default: m.Organizations })))
+const OrganizationDetail = lazy(() => import('@/pages/OrganizationDetail').then((m) => ({ default: m.OrganizationDetail })))
+const Users = lazy(() => import('@/pages/Users').then((m) => ({ default: m.Users })))
+const UserDetail = lazy(() => import('@/pages/UserDetail').then((m) => ({ default: m.UserDetail })))
+const Teams = lazy(() => import('@/pages/Teams').then((m) => ({ default: m.Teams })))
+const TeamDetail = lazy(() => import('@/pages/TeamDetail').then((m) => ({ default: m.TeamDetail })))
+const Hosts = lazy(() => import('@/pages/Hosts').then((m) => ({ default: m.Hosts })))
+const HostDetail = lazy(() => import('@/pages/HostDetail').then((m) => ({ default: m.HostDetail })))
+const Schedules = lazy(() => import('@/pages/Schedules').then((m) => ({ default: m.Schedules })))
+const ScheduleDetail = lazy(() => import('@/pages/ScheduleDetail').then((m) => ({ default: m.ScheduleDetail })))
+const ActivityStream = lazy(() => import('@/pages/ActivityStream').then((m) => ({ default: m.ActivityStream })))
+const AuditLog = lazy(() => import('@/pages/AuditLog').then((m) => ({ default: m.AuditLog })))
+const JobTemplateForm = lazy(() => import('@/pages/JobTemplateForm').then((m) => ({ default: m.JobTemplateForm })))
+const ProjectForm = lazy(() => import('@/pages/ProjectForm').then((m) => ({ default: m.ProjectForm })))
+const InventoryForm = lazy(() => import('@/pages/InventoryForm').then((m) => ({ default: m.InventoryForm })))
+const CredentialForm = lazy(() => import('@/pages/CredentialForm').then((m) => ({ default: m.CredentialForm })))
+const OrganizationForm = lazy(() => import('@/pages/OrganizationForm').then((m) => ({ default: m.OrganizationForm })))
+const Instances = lazy(() => import('@/pages/Instances').then((m) => ({ default: m.Instances })))
+const InstanceDetail = lazy(() => import('@/pages/InstanceDetail').then((m) => ({ default: m.InstanceDetail })))
+const InstanceGroups = lazy(() => import('@/pages/InstanceGroups').then((m) => ({ default: m.InstanceGroups })))
+const InstanceGroupDetail = lazy(() => import('@/pages/InstanceGroupDetail').then((m) => ({ default: m.InstanceGroupDetail })))
+const ExecutionEnvironments = lazy(() => import('@/pages/ExecutionEnvironments').then((m) => ({ default: m.ExecutionEnvironments })))
+const ExecutionEnvironmentDetail = lazy(() => import('@/pages/ExecutionEnvironmentDetail').then((m) => ({ default: m.ExecutionEnvironmentDetail })))
+const Settings = lazy(() => import('@/pages/Settings').then((m) => ({ default: m.Settings })))
+const SettingsCategory = lazy(() => import('@/pages/SettingsCategory').then((m) => ({ default: m.SettingsCategory })))
+const UserForm = lazy(() => import('@/pages/UserForm').then((m) => ({ default: m.UserForm })))
+const TeamForm = lazy(() => import('@/pages/TeamForm').then((m) => ({ default: m.TeamForm })))
+const WorkflowJobTemplateForm = lazy(() => import('@/pages/WorkflowJobTemplateForm').then((m) => ({ default: m.WorkflowJobTemplateForm })))
+const NotificationTemplates = lazy(() => import('@/pages/NotificationTemplates').then((m) => ({ default: m.NotificationTemplates })))
+const NotificationTemplateDetail = lazy(() => import('@/pages/NotificationTemplateDetail').then((m) => ({ default: m.NotificationTemplateDetail })))
+const NotificationTemplateForm = lazy(() => import('@/pages/NotificationTemplateForm').then((m) => ({ default: m.NotificationTemplateForm })))
+const NotFound = lazy(() => import('@/pages/NotFound').then((m) => ({ default: m.NotFound })))
+const ScheduleForm = lazy(() => import('@/pages/ScheduleForm').then((m) => ({ default: m.ScheduleForm })))
+const WorkflowTemplateDetail = lazy(() => import('@/pages/WorkflowTemplateDetail').then((m) => ({ default: m.WorkflowTemplateDetail })))
+const TopologyPage = lazy(() => import('@/pages/TopologyPage').then((m) => ({ default: m.TopologyPage })))
+const EventRules = lazy(() => import('@/pages/EventRules').then((m) => ({ default: m.EventRules })))
+const EventRuleDetail = lazy(() => import('@/pages/EventRuleDetail').then((m) => ({ default: m.EventRuleDetail })))
+const EventRuleForm = lazy(() => import('@/pages/EventRuleForm').then((m) => ({ default: m.EventRuleForm })))
+const EventLogs = lazy(() => import('@/pages/EventLogs').then((m) => ({ default: m.EventLogs })))
+const EventLogDetail = lazy(() => import('@/pages/EventLogDetail').then((m) => ({ default: m.EventLogDetail })))
+const OutboundWebhooks = lazy(() => import('@/pages/OutboundWebhooks').then((m) => ({ default: m.OutboundWebhooks })))
+const OutboundWebhookDetail = lazy(() => import('@/pages/OutboundWebhookDetail').then((m) => ({ default: m.OutboundWebhookDetail })))
+const OutboundWebhookForm = lazy(() => import('@/pages/OutboundWebhookForm').then((m) => ({ default: m.OutboundWebhookForm })))
+const DriftDetections = lazy(() => import('@/pages/DriftDetections').then((m) => ({ default: m.DriftDetections })))
+const DriftDetectionDetail = lazy(() => import('@/pages/DriftDetectionDetail').then((m) => ({ default: m.DriftDetectionDetail })))
+const DriftAlertRules = lazy(() => import('@/pages/DriftAlertRules').then((m) => ({ default: m.DriftAlertRules })))
+const DriftAlertRuleDetail = lazy(() => import('@/pages/DriftAlertRuleDetail').then((m) => ({ default: m.DriftAlertRuleDetail })))
+const DriftAlertRuleForm = lazy(() => import('@/pages/DriftAlertRuleForm').then((m) => ({ default: m.DriftAlertRuleForm })))
+const DriftAlerts = lazy(() => import('@/pages/DriftAlerts').then((m) => ({ default: m.DriftAlerts })))
+const DriftAlertDetail = lazy(() => import('@/pages/DriftAlertDetail').then((m) => ({ default: m.DriftAlertDetail })))
+const FactSnapshots = lazy(() => import('@/pages/FactSnapshots').then((m) => ({ default: m.FactSnapshots })))
+const Analytics = lazy(() => import('@/pages/Analytics').then((m) => ({ default: m.Analytics })))
+const ServicePortal = lazy(() => import('@/pages/ServicePortal').then((m) => ({ default: m.ServicePortal })))
+const MyServiceRequests = lazy(() => import('@/pages/MyServiceRequests').then((m) => ({ default: m.MyServiceRequests })))
+const ServiceRequestDetail = lazy(() => import('@/pages/ServiceRequestDetail').then((m) => ({ default: m.ServiceRequestDetail })))
+const ServiceApprovals = lazy(() => import('@/pages/ServiceApprovals').then((m) => ({ default: m.ServiceApprovals })))
+const ServiceCatalogAdmin = lazy(() => import('@/pages/ServiceCatalogAdmin').then((m) => ({ default: m.ServiceCatalogAdmin })))
+const ServiceCatalogItemForm = lazy(() => import('@/pages/ServiceCatalogItemForm').then((m) => ({ default: m.ServiceCatalogItemForm })))
+const UserSecurity = lazy(() => import('@/pages/UserSecurity').then((m) => ({ default: m.UserSecurity })))
+const MfaChallenge = lazy(() => import('@/pages/MfaChallenge').then((m) => ({ default: m.MfaChallenge })))
+const Policies = lazy(() => import('@/pages/Policies').then((m) => ({ default: m.Policies })))
+const PolicyForm = lazy(() => import('@/pages/PolicyForm').then((m) => ({ default: m.PolicyForm })))
+const PolicyDecisions = lazy(() => import('@/pages/PolicyDecisions').then((m) => ({ default: m.PolicyDecisions })))
+const Scanners = lazy(() => import('@/pages/Scanners').then((m) => ({ default: m.Scanners })))
+const ScannerForm = lazy(() => import('@/pages/ScannerForm').then((m) => ({ default: m.ScannerForm })))
+const ScanResults = lazy(() => import('@/pages/ScanResults').then((m) => ({ default: m.ScanResults })))
+const Observability = lazy(() => import('@/pages/Observability').then((m) => ({ default: m.Observability })))
+const Tenants = lazy(() => import('@/pages/Tenants').then((m) => ({ default: m.Tenants })))
+const TenantForm = lazy(() => import('@/pages/TenantForm').then((m) => ({ default: m.TenantForm })))
+const TenantDetail = lazy(() => import('@/pages/TenantDetail').then((m) => ({ default: m.TenantDetail })))
+const TenantQuotaEvents = lazy(() => import('@/pages/TenantQuotaEvents').then((m) => ({ default: m.TenantQuotaEvents })))
+const GettingStartedWizard = lazy(() => import('@/pages/wizards/GettingStartedWizard').then((m) => ({ default: m.GettingStartedWizard })))
+const AutomationWizard = lazy(() => import('@/pages/wizards/AutomationWizard').then((m) => ({ default: m.AutomationWizard })))
+const SelfServiceWizard = lazy(() => import('@/pages/wizards/SelfServiceWizard').then((m) => ({ default: m.SelfServiceWizard })))
+const TenancyWizard = lazy(() => import('@/pages/wizards/TenancyWizard').then((m) => ({ default: m.TenancyWizard })))
+const ComplianceWizard = lazy(() => import('@/pages/wizards/ComplianceWizard').then((m) => ({ default: m.ComplianceWizard })))
+const ResourcesWizard = lazy(() => import('@/pages/wizards/ResourcesWizard').then((m) => ({ default: m.ResourcesWizard })))
+const AccessWizard = lazy(() => import('@/pages/wizards/AccessWizard').then((m) => ({ default: m.AccessWizard })))
+
+function RouteFallback() {
+  return (
+    <div className="flex h-64 items-center justify-center" role="status" aria-label="Loading page">
+      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+    </div>
+  )
+}
 
 function AuthenticatedRoutes() {
   return (
     <AppLayout>
+      <Suspense fallback={<RouteFallback />}>
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
@@ -242,6 +259,7 @@ function AuthenticatedRoutes() {
 
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </Suspense>
       <AssistantPanel />
     </AppLayout>
   )

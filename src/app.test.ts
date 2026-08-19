@@ -171,12 +171,30 @@ describe('Route patterns', () => {
 })
 
 describe('Page imports', () => {
-  // Every import in App.tsx should correspond to a real file
-  const imports = [...APP_SOURCE.matchAll(/from\s+'(@\/[^']+)'/g)].map((m) => m[1]!)
+  // Both forms count: static `from '@/...'` for the few modules the first paint
+  // needs, and `import('@/...')` inside lazy() for everything routed.
+  const imports = [
+    ...[...APP_SOURCE.matchAll(/from\s+'(@\/[^']+)'/g)].map((m) => m[1]!),
+    ...[...APP_SOURCE.matchAll(/import\('(@\/[^']+)'\)/g)].map((m) => m[1]!),
+  ]
 
   it('has imports for all pages', () => {
     const pageImports = imports.filter((i) => i.includes('/pages/'))
     expect(pageImports.length).toBeGreaterThan(60)
+  })
+
+  it('loads pages lazily', () => {
+    // Eagerly importing pages is what put 1.44 MB into the entry chunk, which
+    // every visitor parses before the first screen. Login and ForcePasswordChange
+    // are the deliberate exceptions -- they are that first screen.
+    const EAGER_BY_DESIGN = ['Login', 'ForcePasswordChange']
+    const eager = [...APP_SOURCE.matchAll(/^import \{ (\w+) \} from '@\/pages\/[\w/]+'/gm)].map((m) => m[1]!)
+    expect(eager.sort()).toEqual(EAGER_BY_DESIGN.sort())
+  })
+
+  it('wraps the lazy routes in a Suspense boundary', () => {
+    // Without one, the first navigation to a lazily loaded page throws.
+    expect(APP_SOURCE).toContain('<Suspense')
   })
 
   it('imports layout components', () => {
