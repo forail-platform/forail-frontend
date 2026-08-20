@@ -19,6 +19,10 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      # A budget on the entry chunk. Every visitor parses it before the first
+      # screen, and it was 1.44 MB until the routes were split -- without a
+      # check, the next eager import puts it back silently.
+      - run: npm run check-bundle
 
   publish:
     # Build and push the image to ghcr.io only on version tags (v*),

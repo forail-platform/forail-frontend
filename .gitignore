@@ -25,3 +25,13 @@ pnpm-debug.log*
 coverage/
 .vagrant/
 .vitest/
+
+# Vite writes here (vite.config.ts sets outDir: build/forail). The Dockerfile is
+# multi-stage and runs `npm run build` itself, so a committed copy is never the
+# one that ships -- it only produces conflicts between branches that each ran a
+# build.
+build/
+
+# tsc -b incremental state and the declaration it emits for vite.config.ts.
+*.tsbuildinfo
+vite.config.d.ts
