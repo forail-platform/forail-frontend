@@ -26,9 +26,13 @@ import type { ObjectRole } from '@/api/types'
 
 interface RBACPanelProps {
   objectRoles: Record<string, ObjectRole> | undefined
+  /** Show who holds each role, without the add and remove controls. */
+  readOnly?: boolean
+  /** Shown under the title, e.g. who may change access. */
+  note?: string
 }
 
-export function RBACPanel({ objectRoles }: RBACPanelProps) {
+export function RBACPanel({ objectRoles, readOnly = false, note }: RBACPanelProps) {
   const [selectedRole, setSelectedRole] = useState<ObjectRole | null>(null)
   const [showAddUser, setShowAddUser] = useState(false)
   const [showAddTeam, setShowAddTeam] = useState(false)
@@ -49,12 +53,14 @@ export function RBACPanel({ objectRoles }: RBACPanelProps) {
           <Shield className="h-5 w-5" />
           Permissions
         </CardTitle>
+        {note && <p className="text-sm text-muted-foreground">{note}</p>}
       </CardHeader>
       <CardContent className="space-y-4">
         {roles.map((role) => (
           <RoleSection
             key={role.key}
             role={role}
+            readOnly={readOnly}
             isSelected={selectedRole?.id === role.id}
             onSelect={() => setSelectedRole(selectedRole?.id === role.id ? null : role)}
             onAddUser={() => { setSelectedRole(role); setShowAddUser(true) }}
@@ -62,7 +68,7 @@ export function RBACPanel({ objectRoles }: RBACPanelProps) {
           />
         ))}
 
-        {selectedRole && (
+        {selectedRole && !readOnly && (
           <>
             <AddUserDialog
               open={showAddUser}
@@ -83,12 +89,14 @@ export function RBACPanel({ objectRoles }: RBACPanelProps) {
 
 function RoleSection({
   role,
+  readOnly,
   isSelected,
   onSelect,
   onAddUser,
   onAddTeam,
 }: {
   role: ObjectRole & { key: string }
+  readOnly: boolean
   isSelected: boolean
   onSelect: () => void
   onAddUser: () => void
@@ -120,10 +128,12 @@ function RoleSection({
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Users</span>
-              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={onAddUser}>
-                <Plus className="mr-1 h-3 w-3" />
-                Add
-              </Button>
+              {!readOnly && (
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={onAddUser}>
+                  <Plus className="mr-1 h-3 w-3" />
+                  Add
+                </Button>
+              )}
             </div>
             {usersData && usersData.results.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
@@ -132,13 +142,16 @@ function RoleSection({
                     <Link to={`/users/${u.id}`} className="hover:underline">
                       {u.username}
                     </Link>
-                    <button
-                      type="button"
-                      onClick={() => unassignUser.mutate(u.id)}
-                      className="ml-0.5 rounded hover:bg-muted-foreground/20 p-0.5"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
+                    {!readOnly && (
+                      <button
+                        type="button"
+                        aria-label={`Remove ${u.username}`}
+                        onClick={() => unassignUser.mutate(u.id)}
+                        className="ml-0.5 rounded hover:bg-muted-foreground/20 p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
                   </Badge>
                 ))}
               </div>
@@ -151,10 +164,12 @@ function RoleSection({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Teams</span>
-                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={onAddTeam}>
-                  <Plus className="mr-1 h-3 w-3" />
-                  Add
-                </Button>
+                {!readOnly && (
+                  <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={onAddTeam}>
+                    <Plus className="mr-1 h-3 w-3" />
+                    Add
+                  </Button>
+                )}
               </div>
               {teamsData && teamsData.results.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
@@ -163,13 +178,16 @@ function RoleSection({
                       <Link to={`/teams/${t.id}`} className="hover:underline">
                         {t.name}
                       </Link>
-                      <button
-                        type="button"
-                        onClick={() => unassignTeam.mutate(t.id)}
-                        className="ml-0.5 rounded hover:bg-muted-foreground/20 p-0.5"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
+                      {!readOnly && (
+                        <button
+                          type="button"
+                          aria-label={`Remove ${t.name}`}
+                          onClick={() => unassignTeam.mutate(t.id)}
+                          className="ml-0.5 rounded hover:bg-muted-foreground/20 p-0.5"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
                     </Badge>
                   ))}
                 </div>
