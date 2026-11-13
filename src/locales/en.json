@@ -46,6 +46,7 @@
     "hosts": "Hosts",
     "projects": "Projects",
     "credentials": "Credentials",
+    "monitored_servers": "Monitored servers",
     "organizations": "Organizations",
     "users": "Users",
     "teams": "Teams",

@@ -41,6 +41,9 @@ const JobTemplateForm = lazy(() => import('@/pages/JobTemplateForm').then((m) =>
 const ProjectForm = lazy(() => import('@/pages/ProjectForm').then((m) => ({ default: m.ProjectForm })))
 const InventoryForm = lazy(() => import('@/pages/InventoryForm').then((m) => ({ default: m.InventoryForm })))
 const CredentialForm = lazy(() => import('@/pages/CredentialForm').then((m) => ({ default: m.CredentialForm })))
+const MonitoredServers = lazy(() => import('@/pages/MonitoredServers').then((m) => ({ default: m.MonitoredServers })))
+const MonitoredServerForm = lazy(() => import('@/pages/MonitoredServerForm').then((m) => ({ default: m.MonitoredServerForm })))
+const MonitoredServerDetail = lazy(() => import('@/pages/MonitoredServerDetail').then((m) => ({ default: m.MonitoredServerDetail })))
 const OrganizationForm = lazy(() => import('@/pages/OrganizationForm').then((m) => ({ default: m.OrganizationForm })))
 const Instances = lazy(() => import('@/pages/Instances').then((m) => ({ default: m.Instances })))
 const InstanceDetail = lazy(() => import('@/pages/InstanceDetail').then((m) => ({ default: m.InstanceDetail })))
@@ -150,6 +153,11 @@ function AuthenticatedRoutes() {
         <Route path="/credentials/new" element={<CredentialForm />} />
         <Route path="/credentials/:id/edit" element={<CredentialForm />} />
         <Route path="/credentials/:id" element={<CredentialDetail />} />
+
+        {/* Monitored servers (forail-mobile#52) */}
+        <Route path="/monitored_servers" element={<MonitoredServers />} />
+        <Route path="/monitored_servers/new" element={<MonitoredServerForm />} />
+        <Route path="/monitored_servers/:id" element={<MonitoredServerDetail />} />
 
         {/* Access */}
         <Route path="/organizations" element={<Organizations />} />
