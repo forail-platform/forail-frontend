@@ -1396,3 +1396,45 @@ export interface Recommendation {
   why: string
   action_link: string
 }
+
+// --- Monitored servers (forail-mobile#52) ---
+
+export interface MonitoredServerCapabilities {
+  edit: boolean
+  delete: boolean
+  /** Rotate the agent token or issue an enrollment code. */
+  rotate: boolean
+  /** Grant or revoke access: admins of the organization and superusers only. */
+  manage_access: boolean
+}
+
+export interface MonitoredServer {
+  id: number
+  type: 'monitored_server'
+  url: string
+  name: string
+  description: string
+  organization: number
+  owner: number | null
+  mobile_server_id: string
+  /** From the Forail Mobile backend; null when it could not be asked. */
+  online: boolean | null
+  last_report_at: string | null
+  created: string
+  modified: string
+  summary_fields?: {
+    organization?: { id: number; name: string; description?: string }
+    owner?: { id: number; username: string; first_name: string; last_name: string }
+    created_by?: { id: number; username: string }
+    object_roles?: Record<string, ObjectRole>
+    user_capabilities?: MonitoredServerCapabilities
+  }
+}
+
+/** A one-time code for `forail-agent enroll`. Never a long-lived agent token. */
+export interface EnrollmentCode {
+  code: string
+  expires_at: string
+  api_url: string
+  command: string
+}

@@ -13,6 +13,7 @@ const routeLabels: Record<string, string> = {
   '/inventories': 'Inventories',
   '/projects': 'Projects',
   '/credentials': 'Credentials',
+  '/monitored_servers': 'Monitored servers',
   '/organizations': 'Organizations',
   '/users': 'Users',
   '/teams': 'Teams',

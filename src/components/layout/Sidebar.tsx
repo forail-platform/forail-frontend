@@ -7,6 +7,7 @@ import {
   Monitor,
   FolderGit2,
   KeyRound,
+  ServerCog,
   Building2,
   Users,
   UsersRound,
@@ -123,6 +124,7 @@ const navigation: NavGroup[] = [
       { labelKey: 'nav.hosts', path: '/hosts', icon: Monitor },
       { labelKey: 'nav.projects', path: '/projects', icon: FolderGit2 },
       { labelKey: 'nav.credentials', path: '/credentials', icon: KeyRound },
+      { labelKey: 'nav.monitored_servers', path: '/monitored_servers', icon: ServerCog },
     ],
   },
   {
