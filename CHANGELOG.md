@@ -8,6 +8,17 @@ and the project adheres to SemVer until the first stable release.
 
 ## [Unreleased]
 
+### Added
+- **Monitored servers** under Resources (forail-mobile#52), on
+  `/api/v2/monitored_servers/`: list with online state, organization, owner
+  and last report; register a server in an organization you belong to; an
+  **Install** panel that issues a one-time enrollment code with a 10-minute
+  countdown and the exact `forail-agent enroll` command to copy, never an
+  agent token; rotate token and delete behind a confirmation; an **Access**
+  tab where admins of the organization grant and revoke, and everyone else
+  sees who has access, read-only. Buttons follow `user_capabilities`.
+- `RBACPanel` takes `readOnly` and `note`.
+
 ### Security
 - **Branding favicon URL validation**: the favicon supplied by the
   unauthenticated host-keyed branding response is only applied when it is an
