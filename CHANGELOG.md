@@ -8,6 +8,8 @@ and the project adheres to SemVer until the first stable release.
 
 ## [Unreleased]
 
+## [2026.11.0] - 2026-11-20
+
 ### Added
 - **Monitored servers** under Resources (forail-mobile#52), on
   `/api/v2/monitored_servers/`: list with online state, organization, owner
